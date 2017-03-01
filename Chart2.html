@@ -67,9 +67,9 @@
 				if(topic.endsWith('/datafeed/sensor')){
 					//console.log(topic+" > "+msg);
 					var m = msg.split(':');
-					yVal_stack = m[2].substring(1).trim();
-					yVal1_stack = m[0].substring(1).trim();
-					yVal2_stack = m[1].substring(1).trim();
+					yVal_stack = m[3].trim();
+					yVal1_stack = m[1].trim();
+					yVal2_stack = m[2].trim();
 					console.log(yVal_stack+" : "+yVal1_stack+" : "+yVal2_stack);
 					//meter1.refresh(m[0].trim());
 					//meter2.refresh(m[1].trim());
