@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <!DOCTYPE HTML>
 <html>
 
@@ -213,4 +214,221 @@
 </div>
 
 </body>
+=======
+<!DOCTYPE HTML>
+<html>
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.highcharts.com/modules/exporting.js"></script>
+    <script type="text/javascript" src="canvasjs.min.js"></script>
+    <style type="text/css">
+        .bg-1 { 
+    background-color: #002699; /* Blue */
+    color: #000000;
+    max-height: :auto;
+    }
+    body{
+    height: 100%;
+    background-color: #002699 ;
+    }
+    h1{
+        color: white
+    }
+    </style>
+
+    <script type="text/javascript">
+        window.onload = function () {
+            //Creating date objects Example Tue Feb 28 2017 16:14:33 GMT+0700 (SE Asia Standard Time)
+            var time = new Date();//time date of x value
+            //Gas chart
+            var dps_gas = []; // dataPoints
+            var dps_temp = [];
+            var dps_hum = [];
+
+            var yVal = 0; //gas value
+            var yVal1 = 0; //temp value
+            var yVal2 = 0; //humid value
+            var updateInterval = 1000; // update evert 1000 milisecond
+            var maxDataLength = 50; // number of dataPoints after which the series shifts
+            
+            var updateCount = 0;
+            //Gas chart
+            var chart = new CanvasJS.Chart("chartContainer", {
+                title: {
+                    text: "Gas data"
+                },
+                axisX: {
+                    title: "Time",
+                    valueFormatString: "hh:mm:ss",
+                    margin: 0
+                },
+
+                axisY: {
+                    title: "%Unit",
+                    margin: 10
+                },
+                data: [{
+                    type: "spline",
+                    xValueType: "dateTime",
+                    dataPoints: dps_gas
+                }],
+            });
+            //Temp chart
+            var chart1 = new CanvasJS.Chart("chartContainer1", {
+                title: {
+                    text: "Temp data" 
+                },
+                axisX: {
+                    title: "Time",
+                    valueFormatString: "hh:mm:ss",
+                    margin: 0
+                },
+
+                axisY: {
+                    title: "%Unit",
+                    margin: 10
+                },
+                data: [{
+                    type: "spline",
+                    xValueType: "dateTime",
+                    dataPoints: dps_temp
+                }],
+            });
+            //Humid chart
+            var chart2 = new CanvasJS.Chart("chartContainer2", {
+                title: {
+                    text: "Humid data"
+                },
+                axisX: {
+                    title: "Time",
+                    valueFormatString: "hh:mm:ss",
+                    margin: 0
+                },
+
+                axisY: {
+                    title: "%Unit",
+                    margin: 10
+                },
+                data: [{
+                    type: "spline",
+                    xValueType: "dateTime",
+                    dataPoints: dps_hum
+                }],
+            });
+
+            //Gas_history
+            // var dpsh_temp = [{x: 1 y: 3858000},
+            //     {x: 2 y: 3858000},        
+            //     {x: 3 y: 3858000},        
+            //     {x: 4 y: 3858000},     
+            //     {x: 5 y: 3858000},        
+            //     {x: 6 y: 3858000},      
+            //     {x: 7 y: 3858000},        
+            //     {x: 8 y: 3858000},      
+            //     {x: 9 y: 3858000},
+            //     {x: 10 y: 3858000}
+            // var chart4 = new CanvasJS.Chart("Gas_history", {
+            //     title: {
+            //         text: "Gas" 
+            //     },
+            //     axisX: {
+            //         title: "######-######",
+            //         margin: 0
+            //     },
+
+            //     axisY: {
+            //         title: "%Unit",
+            //         margin: 10
+            //     },
+            //     data: [{
+            //         type: "spline",
+            //         dataPoints: dpsh_temp
+            //     }],
+            // });
+
+            
+
+            var updateChart = function (count) {
+
+                count = count || 1;
+
+                for (var j = 0; j < 1; j++) {
+                    time.setSeconds(time.getSeconds()+1);
+                    yVal = yVal +  Math.round(5 + Math.random() *(-10));
+                    yVal1 = yVal1 +  Math.round(5 + Math.random() *(-10));
+                    yVal2 = yVal2 +  Math.round(5 + Math.random() *(-10));
+                    dps_gas.push({
+                        x: time.getTime(),
+                        y: yVal
+                    });
+                    dps_temp.push({
+                        x: time.getTime(),
+                        y: yVal1
+                    })
+                    dps_hum.push({
+                        x: time.getTime(),
+                        y: yVal2
+                    })
+                    updateCount++;
+
+                    if (dps_gas.length > maxDataLength) {
+                        dps_gas.shift();
+                    }
+                    if (dps_temp.length > maxDataLength) {
+                        dps_temp.shift();
+                    }
+                    if (dps_hum.length > maxDataLength) {
+                        dps_hum.shift();
+                    }
+                }
+                
+
+                chart.render();
+                chart1.render();
+                chart2.render();
+                // chart4.render();
+
+            };
+
+            // generates first set of dataPoints
+            updateChart(maxDataLength);
+
+            // update chart after specified time.
+            setInterval(function () { updateChart();}, updateInterval);
+
+        }
+
+    </script>
+
+
+</head>
+<body bg-1>
+<center><h1><i>Sensor Monitor</i></h1></center>
+<br>
+<div class="row">
+    <div class="col-sm-4" id="chartContainer" style="height: 300px; width:33%;"></div>
+    <div class="col-sm-4" id="chartContainer1" style="height: 300px; width:33%;"></div>
+    <div class="col-sm-4" id="chartContainer2" style="height: 300px; width:33%;"></div>
+</div>
+
+<br><br>
+
+        <div class="row">
+             <div class="col-sm-4" id="Gas_history" style="height: 300px; width:33%;"></div>
+             <div class="col-sm-4">
+                    <form><font color="white">form :</font>
+                    <input type="date" name="date" min="2016-01-01" max="2100-01-01">
+                    <input type="submit" value="generates">
+                <br>
+                    <font color="white">to :</font><input type="date" name="date" min="2016-01-01" max="2100-01-01">
+                    </form></div>
+</div>
+
+</body>
+>>>>>>> origin/master
 </html>

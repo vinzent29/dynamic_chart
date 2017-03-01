@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <!DOCTYPE HTML>
 <html>
 
@@ -246,4 +247,254 @@
 </div>
 
 </body>
+=======
+<!DOCTYPE HTML>
+<html>
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.highcharts.com/modules/exporting.js"></script>
+    <script type="text/javascript" src="canvasjs.min.js"></script>
+	<script src="https://cdn.netpie.io/microgear.js"></script>
+    <style type="text/css">
+        .bg-1 { 
+    background-color: #002699; /* Blue */
+    color: #000000;
+    max-height: :auto;
+    }
+    body{
+    height: 100%;
+    background-color: #002699 ;
+    }
+    h1{
+        color: white
+    }
+    </style>
+
+    <script type="text/javascript">
+        window.onload = function () {
+            //Creating date objects Example Tue Feb 28 2017 16:14:33 GMT+0700 (SE Asia Standard Time)
+            var time = new Date();//time date of x value
+            //Gas chart
+            var dps_gas = []; // dataPoints
+            var dps_temp = [];
+            var dps_hum = [];
+
+			var yVal_stack = 0; //gas value
+            var yVal1_stack = 0; //temp value
+            var yVal2_stack = 0; //humid value
+
+            var yVal = 0; //gas value
+            var yVal1 = 0; //temp value
+            var yVal2 = 0; //humid value
+            var updateInterval = 1000; // update evert 1000 milisecond
+            var maxDataLength = 50; // number of dataPoints after which the series shifts
+            
+			
+			var appid, appkey, appsecret;
+
+			var a = location.hash.substring(1).split(':');
+			if (a.length==3) {
+				appid = a[0];
+				appkey = a[1];
+				appsecret = a[2];
+			}
+			else {
+				alert("Please inclde APPID:APPKEY:APPSECRET as a url hash e.g. :\n\n index.html#APPID:APPKEY:APPSECRET");            
+			}
+    
+			var microgear = Microgear.create({
+				key: appkey,
+				secret: appsecret,
+				alias : "web"
+			});
+
+			microgear.on('message',function(topic,msg) {
+				if(topic.endsWith('/datafeed/sensor')){
+					//console.log(topic+" > "+msg);
+					var m = msg.split(':');
+					yVal_stack = m[3].trim();
+					yVal1_stack = m[1].trim();
+					yVal2_stack = m[2].trim();
+					console.log(yVal_stack+" : "+yVal1_stack+" : "+yVal2_stack);
+					//meter1.refresh(m[0].trim());
+					//meter2.refresh(m[1].trim());
+					//document.getElementById("meter3").innerHTML = m[2].trim()+" kWh";
+				}
+			});
+			microgear.on('connected', function() {
+				console.log("Connected");
+				microgear.subscribe('/datafeed/#');
+				document.getElementById("data").innerHTML = "<FONT color=#00BB00>ONLINE</FONT>";
+				/*setInterval(function(){
+					microgear.publish("/datafeed/sensor",":t0003:h0002:g0001");
+				},1000);*/
+			});
+			microgear.on('disconnected', function() {
+				console.log("Disconnected");
+			});
+
+			microgear.connect(appid);
+
+
+            var updateCount = 0;
+            //Gas chart
+            var chart = new CanvasJS.Chart("chartContainer", {
+                title: {
+                    text: "Gas data"
+                },
+                axisX: {
+                    title: "Time",
+                    valueFormatString: "hh:mm:ss",
+                    margin: 0
+                },
+
+                axisY: {
+                    title: "%Unit",
+                    margin: 10
+                },
+                data: [{
+                    type: "spline",
+                    xValueType: "dateTime",
+                    dataPoints: dps_gas
+                }],
+            });
+            //Temp chart
+            var chart1 = new CanvasJS.Chart("chartContainer1", {
+                title: {
+                    text: "Temp data" 
+                },
+                axisX: {
+                    title: "Time",
+                    valueFormatString: "hh:mm:ss",
+                    margin: 0
+                },
+
+                axisY: {
+                    title: "%Unit",
+                    margin: 10
+                },
+                data: [{
+                    type: "spline",
+                    xValueType: "dateTime",
+                    dataPoints: dps_temp
+                }],
+            });
+            //Humid chart
+            var chart2 = new CanvasJS.Chart("chartContainer2", {
+                title: {
+                    text: "Humid data"
+                },
+                axisX: {
+                    title: "Time",
+                    valueFormatString: "hh:mm:ss",
+                    margin: 0
+                },
+
+                axisY: {
+                    title: "%Unit",
+                    margin: 10
+                },
+                data: [{
+                    type: "spline",
+                    xValueType: "dateTime",
+                    dataPoints: dps_hum
+                }],
+            });      
+
+            var updateChart = function (count) {
+
+                count = count || 1;
+
+                for (var j = 0; j < 1; j++) {
+                    time.setSeconds(time.getSeconds()+1);
+                    yVal = parseInt(yVal_stack);
+                    yVal1 = parseInt(yVal1_stack);
+                    yVal2 = parseInt(yVal2_stack);
+					
+					// ตัวเลือกเสริม
+					// ถ้าต้องการเช็คค่า ถ้าไม่มีค่าให้กำหนดค่าเป็น 0  
+					// การกำหนดแบบนี้จะทำให้เกิดจุด แต่อาจจะทำให้สับสนว่า sensor ส่งค่ามาเป็น 0 หรือคิดว่า sensor เสีย
+					//if(isNaN(yVal)) yVal = 0;
+					//if(isNaN(yVal1)) yVal1 = 0;
+					//if(isNaN(yVal2)) yVal2 = 0;
+					
+					//console.log(yVal+"..."+yVal1+"..."+yVal2);
+					
+                    dps_gas.push({
+                        x: time.getTime(),
+                        y: yVal
+                    });
+                    dps_temp.push({
+                        x: time.getTime(),
+                        y: yVal1
+                    })
+                    dps_hum.push({
+                        x: time.getTime(),
+                        y: yVal2
+                    })
+                    updateCount++;
+
+                    if (dps_gas.length > maxDataLength) {
+                        dps_gas.shift();
+                    }
+                    if (dps_temp.length > maxDataLength) {
+                        dps_temp.shift();
+                    }
+                    if (dps_hum.length > maxDataLength) {
+                        dps_hum.shift();
+                    }
+                }
+                
+
+                chart.render();
+                chart1.render();
+                chart2.render();
+                // chart4.render();
+
+            };
+
+            // generates first set of dataPoints
+            updateChart(maxDataLength);
+
+            // update chart after specified time.
+            setInterval(function () { updateChart();}, updateInterval);
+
+        }
+
+    </script>
+
+
+</head>
+<body bg-1>
+<center><h1><i>Sensor Monitor</i></h1></center>
+<br>
+
+<div id="data" align="right"><FONT COLOR=#DDDDDD>OFFLINE</FONT></div>
+<div class="row">
+    <div class="col-sm-4" id="chartContainer" style="height: 300px; width:33%;"></div>
+    <div class="col-sm-4" id="chartContainer1" style="height: 300px; width:33%;"></div>
+    <div class="col-sm-4" id="chartContainer2" style="height: 300px; width:33%;"></div>
+</div>
+
+
+<br><br>
+
+        <div class="row">
+             <div class="col-sm-4" id="Gas_history" style="height: 300px; width:33%;"></div>
+             <div class="col-sm-4">
+                    <form><font color="white">form :</font>
+                    <input type="date" name="date" min="2016-01-01" max="2100-01-01">
+                    <input type="submit" value="generates">
+                <br>
+                    <font color="white">to :</font><input type="date" name="date" min="2016-01-01" max="2100-01-01">
+                    </form></div>
+</div>
+
+</body>
+>>>>>>> origin/master
 </html>
