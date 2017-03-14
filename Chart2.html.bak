@@ -106,7 +106,7 @@
 					yVal1_stack = m[1].trim();
 					yVal2_stack = m[2].trim();
 					yVal3_stack = m[4].trim();
-					//console.log(yVal_stack+" : "+yVal1_stack+" : "+yVal2_stack" : //"+yVal3_stack );
+					console.log(yVal_stack+" : "+yVal1_stack+" : "+yVal2_stack" : "+yVal3_stack );
 					//meter1.refresh(m[0].trim());
 					//meter2.refresh(m[1].trim());
 					//document.getElementById("meter3").innerHTML = m[2].trim()+" kWh";
@@ -190,7 +190,6 @@
                     xValueType: "dateTime",
                     dataPoints: dps_hum
                 }],
-			});
             //Gas out chart New!!!!
             var chart3 = new CanvasJS.Chart("chartContainer3", {
                 title: {
