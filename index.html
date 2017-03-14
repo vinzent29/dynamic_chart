@@ -1,0 +1,611 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta http-equiv="content-type" content="application/vnd.ms-excel;" charset="UTF-8">
+	<meta charset="UTF-8">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.highcharts.com/modules/exporting.js"></script>
+    <script type="text/javascript" src="canvasjs.min.js"></script>
+	<script src="https://cdn.netpie.io/microgear.js"></script>
+	<script type="text/javascript" src="js/jquery.table2excel.js"></script>
+    <style type="text/css">
+        .bg-1 { 
+    background-color: #002699; /* Blue */
+    color: #000000;
+    max-height: :auto;
+    }
+    body{
+    height: 100%;
+    background-color: #002699 ;
+    }
+    h1{
+        color: white
+    }
+    .center{
+        margin: auto;
+        width: 100%;
+       /*border: 3px solid green;*/
+        padding: 0;
+        /*text-align: left;*/
+    }
+    .center1{
+        margin: auto;
+        width: 10%;
+       /*border: 3px solid green;*/
+        padding: 100px 0;
+        /*text-align: left;*/
+    }
+    .left {
+    float: left;
+    width: 100px;
+    /*background-color: #b0e0e6;*/
+    }
+    .right {
+    float: right;
+    width: 10px;
+    /*background-color: #b0e0e6;*/
+    }
+    th,td{
+        padding: 15px;
+    }
+    div.scroll {
+    height: 300px;
+    overflow: scroll;
+    }
+    /*limit for panel*/
+	.exceltable {
+		border: 1px solid black;
+		width: 100%;
+	}
+	.excelth {
+		border: 1px solid black;
+		padding: 5px;
+		background-color:grey;
+		color: white;
+	}
+	.exceltd {
+		border: 1px solid black;
+		padding: 5px;
+	}
+	
+	#btnExportP1, btnExportP2, btnExportP3, btnExportP4 {
+	}
+    </style>
+
+    <script type="text/javascript">
+        window.onload = function () {
+            //Creating date objects Example Tue Feb 28 2017 16:14:33 GMT+0700 (SE Asia Standard Time)
+            var time = new Date();//time date of x value
+            //Gas chart
+            var dps_gas = []; // dataPoints
+            var dps_temp = [];
+            var dps_hum = [];
+			var dps_gas2 = [];
+
+			var yVal_stack = 0; //gas value
+            var yVal1_stack = 0; //temp value
+            var yVal2_stack = 0; //humid value
+			var yVal3_stack = 0; //humid value
+
+            var yVal = 0; //gas value
+            var yVal1 = 0; //temp value
+            var yVal2 = 0; //humid value
+			var yVal3 = 0; //humid value
+            var updateInterval = 1000; // update evert 1000 milisecond
+            var maxDataLength = 50; // number of dataPoints after which the series shifts
+            
+			
+			var appid, appkey, appsecret;
+
+			var a = location.hash.substring(1).split(':');
+			if (a.length==3) {
+				appid = a[0];
+				appkey = a[1];
+				appsecret = a[2];
+			}
+			else {
+				alert("Please inclde APPID:APPKEY:APPSECRET as a url hash e.g. :\n\n index.html#APPID:APPKEY:APPSECRET");            
+			}
+    
+			var microgear = Microgear.create({
+				key: appkey,
+				secret: appsecret,
+				alias : "web"
+			});
+
+			microgear.on('message',function(topic,msg) {
+				if(topic.endsWith('/datafeed/sensor')){
+					//console.log(topic+" > "+msg);
+					var m = msg.split(':');
+					yVal_stack = m[3].trim();
+					yVal1_stack = m[1].trim();
+					yVal2_stack = m[2].trim();
+					yVal3_stack = m[4].trim();
+					//console.log(yVal_stack+" : "+yVal1_stack+" : "+yVal2_stack" : //"+yVal3_stack );
+					//meter1.refresh(m[0].trim());
+					//meter2.refresh(m[1].trim());
+					//document.getElementById("meter3").innerHTML = m[2].trim()+" kWh";
+				}
+			});
+			microgear.on('connected', function() {
+				console.log("Connected");
+				microgear.subscribe('/datafeed/#');
+				document.getElementById("data").innerHTML = "<FONT color=#00BB00>ONLINE</FONT>";
+				/*setInterval(function(){
+					microgear.publish("/datafeed/sensor",":t0003:h0002:g0001");
+				},1000);*/
+			});
+			microgear.on('disconnected', function() {
+				console.log("Disconnected");
+			});
+
+			microgear.connect(appid);
+
+
+            var updateCount = 0;
+            //Gas chart
+            var chart = new CanvasJS.Chart("chartContainer", {
+                title: {
+                    text: "Gas In data"
+                },
+                axisX: {
+                    title: "Time",
+                    valueFormatString: "hh:mm:ss",
+                    margin: 0
+                },
+
+                axisY: {
+                    title: "%Unit",
+                    margin: 10
+                },
+                data: [{
+                    type: "line",
+                    xValueType: "dateTime",
+                    dataPoints: dps_gas
+                }],
+            });
+            //Temp chart
+            var chart1 = new CanvasJS.Chart("chartContainer1", {
+                title: {
+                    text: "Temp data" 
+                },
+                axisX: {
+                    title: "Time",
+                    valueFormatString: "hh:mm:ss",
+                    margin: 0
+                },
+
+                axisY: {
+                    title: "%Unit",
+                    margin: 10
+                },
+                data: [{
+                    type: "line",
+                    xValueType: "dateTime",
+                    dataPoints: dps_temp
+                }],
+            });
+            //Humid chart
+            var chart2 = new CanvasJS.Chart("chartContainer2", {
+                title: {
+                    text: "Humid data"
+                },
+                axisX: {
+                    title: "Time",
+                    valueFormatString: "hh:mm:ss",
+                    margin: 0
+                },
+
+                axisY: {
+                    title: "%Unit",
+                    margin: 10
+                },
+                data: [{
+                    type: "line",
+                    xValueType: "dateTime",
+                    dataPoints: dps_hum
+                }],
+			});
+            //Gas out chart New!!!!
+            var chart3 = new CanvasJS.Chart("chartContainer3", {
+                title: {
+                    text: "Gas Out data"
+                },
+                axisX: {
+                    title: "Time",
+                    valueFormatString: "hh:mm:ss",
+                    margin: 0
+                },
+
+                axisY: {
+                    title: "%Unit",
+                    margin: 10
+                },
+                data: [{
+                    type: "spline",
+                    xValueType: "dateTime",
+                    dataPoints: dps_gas2
+                }],
+            });      
+
+            var updateChart = function (count) {
+
+                count = count || 1;
+
+                for (var j = 0; j < 1; j++) {
+                    time.setSeconds(time.getSeconds()+1);
+                    yVal = parseInt(yVal_stack);
+                    yVal1 = parseInt(yVal1_stack);
+                    yVal2 = parseInt(yVal2_stack);
+					yVal3 = parseInt(yVal3_stack);
+					
+					// ตัวเลือกเสริม
+					// ถ้าต้องการเช็คค่า ถ้าไม่มีค่าให้กำหนดค่าเป็น 0  
+					// การกำหนดแบบนี้จะทำให้เกิดจุด แต่อาจจะทำให้สับสนว่า sensor ส่งค่ามาเป็น 0 หรือคิดว่า sensor เสีย
+					//if(isNaN(yVal)) yVal = 0;
+					//if(isNaN(yVal1)) yVal1 = 0;
+					//if(isNaN(yVal2)) yVal2 = 0;
+					
+					//console.log(yVal+"..."+yVal1+"..."+yVal2);
+					
+                    dps_gas.push({
+                        x: time.getTime(),
+                        y: yVal
+                    });
+                    dps_temp.push({
+                        x: time.getTime(),
+                        y: yVal1
+                    })
+                    dps_hum.push({
+                        x: time.getTime(),
+                        y: yVal2
+                    })
+					dps_gas2.push({ //add gas out chart 
+                    	x: time.getTime(),
+                    	y: yVal3
+                    })
+                    updateCount++;
+
+                    if (dps_gas.length > maxDataLength) {
+                        dps_gas.shift();
+                    }
+                    if (dps_temp.length > maxDataLength) {
+                        dps_temp.shift();
+                    }
+                    if (dps_hum.length > maxDataLength) {
+                        dps_hum.shift();
+                    }
+					if (dps_gas2.length > maxDataLength) { //update
+                        dps_gas2.shift();
+                    }
+                }
+                
+
+                chart.render();
+                chart1.render();
+                chart2.render();
+				chart3.render();//gas out chart render
+                // chart4.render();
+
+            };
+
+            // generates first set of dataPoints
+            updateChart(maxDataLength);
+
+            // update chart after specified time.
+            setInterval(function () { updateChart();}, updateInterval);
+
+        }
+
+    </script>
+
+<script> //value will get after click button generate
+
+var tableToExcel = (function() {
+  var uri = 'data:application/vnd.ms-excel;base64,'
+    , template = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>{worksheet}</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body><table>{table}</table></body></html>'
+    , base64 = function(s) { return window.btoa(unescape(encodeURIComponent(s))) }
+    , format = function(s, c) { return s.replace(/{(\w+)}/g, function(m, p) { return c[p]; }) }
+  return function(table, name) {
+    if (!table.nodeType) table = document.getElementById(table)
+    var ctx = {worksheet: name || 'Worksheet', table: table.innerHTML}
+    window.location.href = uri + base64(format(template, ctx))
+  }
+})();
+
+
+function fileName(){
+        var dt = new Date();
+        var day = dt.getDate();
+        var month = dt.getMonth() + 1;
+        var year = dt.getFullYear();
+        var hour = dt.getHours();
+        var mins = dt.getMinutes();
+        return day + "." + month + "." + year + "_" + hour + "." + mins;
+}
+
+function btnExportP1(){
+	tableToExcel('gas_in_tb', 'ปริมาณก๊าซ(เข้า)');
+}
+function btnExportP2(){
+	tableToExcel('temp_tb', 'อุณหภูมิ');
+};
+function btnExportP3(){
+	tableToExcel('hum_tb', 'ความชื้น');
+};
+function btnExportP4(){
+	tableToExcel('gas_out_tb', 'ปริมาณก๊าซ(ออก)');
+};
+
+function getFormattedDate(times) {
+    var date = new Date(times);
+    var str = [ date.getDate()+ "/" + (date.getMonth() + 1) + "/" + date.getFullYear() ,  date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds()];
+    return str;
+}
+
+var feedid = "sensormon";
+var feedapikey = "SaPHXHxzKMYpmFFxxD9TI0x0EaisAYdQ";
+var granularity = "1minutes";
+var urlFeedAPI = "https://api.netpie.io/feed/"+feedid+"?apikey="+feedapikey+"&granularity="+granularity;
+function GetDate1() { //function of gas in 
+    var Form1 = new Date(document.getElementById("Form1").value).getTime();
+    var To1 = new Date(document.getElementById("To1").value).getTime();
+	var getGas = $.get( urlFeedAPI+"&from="+Form1+"&to="+To1, function(resData) {
+	  //console.log(urlFeedAPI+"&from="+Form1+"&to="+To1);
+		try{
+		  if(typeof(JSON.parse(resData).data[0])!="undefined") {
+			  var jsonDataGasIn = JSON.parse(resData).data[0].values;
+			  console.log(jsonDataGasIn);
+			  var tableExcel = "<table id='gas_in_tb' class='exceltable'><tr><th class='excelth'>วัน/เดือน/ปี</th><th class='excelth'>เวลา</th><th class='excelth'>ปริมาณก๊าซ(เข้า)</th></tr>"
+			  for(var i=0; i<jsonDataGasIn.length;i++){
+				var dt = getFormattedDate(jsonDataGasIn[i][0]);
+				tableExcel+="<tr><td class='exceltd'>"+dt[0]+"</td><td class='exceltd'>"+dt[1]+"</td><td class='exceltd'>"+jsonDataGasIn[i][1]+"</td> </tr>";
+				//console.log(dt[0]+" , "+dt[1]+" , "+jsonDataGasIn[i][1]);
+			  }
+			  tableExcel+= "</table>";
+			  document.getElementById("gas_in_pan").innerHTML = tableExcel;
+		  }else{
+			document.getElementById("gas_in_pan").innerHTML = "<table id='gas_in_tb' class='exceltable'><tr><th class='excelth'>วัน/เดือน/ปี</th><th class='excelth'>เวลา</th><th class='excelth'>ปริมาณก๊าซ(เข้า)</th></tr><tr><td colspan='3'>ไม่มีข้อมูล</td></tr></table>";
+		  }
+		}catch(err) {
+			document.getElementById("gas_in_pan").innerHTML = "<table id='gas_in_tb' class='exceltable'><tr><th class='excelth'>วัน/เดือน/ปี</th><th class='excelth'>เวลา</th><th class='excelth'>ปริมาณก๊าซ(เข้า)</th></tr><tr><td colspan='3'>ไม่มีข้อมูล</td></tr></table>";
+		}
+	  
+	}).done(function() {
+		console.log( "second success" );
+	}).fail(function() {
+		alert( "การเชื่อมต่อล้มเหลว ไม่สามารถแสดงข้อมูลได้" );
+	}).always(function() {
+		console.log( "finished" );
+	});
+}
+function GetDate2() {//function of temperatur
+    var Form2 = new Date(document.getElementById("Form2").value).getTime();
+    var To2 = new Date(document.getElementById("To2").value).getTime();
+	var getGas = $.get( urlFeedAPI+"&from="+Form2+"&to="+To2, function(resData) {
+	  //console.log(urlFeedAPI+"&from="+Form2+"&to="+To2);
+		try{
+		  if(typeof(JSON.parse(resData).data[1])!="undefined") {
+			  var jsonDataTemp = JSON.parse(resData).data[1].values;
+			  console.log(jsonDataTemp);
+			  var tableExcel = "<table id='temp_tb' class='exceltable'><tr><th class='excelth'>วัน/เดือน/ปี</th><th class='excelth'>เวลา</th><th class='excelth'>อุณหภูมิ</th></tr>"
+			  for(var i=0; i<jsonDataTemp.length;i++){
+				var dt = getFormattedDate(jsonDataTemp[i][0]);
+				tableExcel+="<tr><td class='exceltd'>"+dt[0]+"</td><td class='exceltd'>"+dt[1]+"</td><td class='exceltd'>"+jsonDataTemp[i][1]+"</td> </tr>";
+				//console.log(dt[0]+" , "+dt[1]+" , "+jsonDataTemp[i][1]);
+			  }
+			  tableExcel+= "</table>";
+			  document.getElementById("temp_pan").innerHTML = tableExcel;
+		  }else{
+			document.getElementById("temp_pan").innerHTML = "<table id='temp_tb' class='exceltable'><tr><th class='excelth'>วัน/เดือน/ปี</th><th class='excelth'>เวลา</th><th class='excelth'>อุณหภูมิ</th></tr><tr><td colspan='3'>ไม่มีข้อมูล</td></tr></table>";
+		  }
+		}catch(err) {
+			document.getElementById("temp_pan").innerHTML = "<table id='temp_tb' class='exceltable'><tr><th class='excelth'>วัน/เดือน/ปี</th><th class='excelth'>เวลา</th><th class='excelth'>อุณหภูมิ</th></tr><tr><td colspan='3'>ไม่มีข้อมูล</td></tr></table>";
+		}
+	  
+	}).done(function() {
+		console.log( "second success" );
+	}).fail(function() {
+		alert( "การเชื่อมต่อล้มเหลว ไม่สามารถแสดงข้อมูลได้" );
+	}).always(function() {
+		console.log( "finished" );
+	});
+}
+function GetDate3() { //function of humid
+    var Form3 = new Date(document.getElementById("Form3").value).getTime();
+    var To3 = new Date(document.getElementById("To3").value).getTime();
+	var getGas = $.get( urlFeedAPI+"&from="+Form3+"&to="+To3, function(resData) {
+	  //console.log(urlFeedAPI+"&from="+Form3+"&to="+To3);
+		try{
+		  if(typeof(JSON.parse(resData).data[2])!="undefined") {
+			  var jsonDataHumid = JSON.parse(resData).data[2].values;
+			  console.log(jsonDataHumid);
+			  var tableExcel = "<table id='hum_tb' class='exceltable'><tr><th class='excelth'>วัน/เดือน/ปี</th><th class='excelth'>เวลา</th><th class='excelth'>ความชื้น</th></tr>"
+			  for(var i=0; i<jsonDataHumid.length;i++){
+				var dt = getFormattedDate(jsonDataHumid[i][0]);
+				tableExcel+="<tr><td class='exceltd'>"+dt[0]+"</td><td class='exceltd'>"+dt[1]+"</td><td class='exceltd'>"+jsonDataHumid[i][1]+"</td> </tr>";
+				//console.log(dt[0]+" , "+dt[1]+" , "+jsonDataHumid[i][1]);
+			  }
+			  tableExcel+= "</table>";
+			  document.getElementById("hum_pan").innerHTML = tableExcel;
+		  }else{
+			document.getElementById("hum_pan").innerHTML = "<table id='hum_tb' class='exceltable'><tr><th class='excelth'>วัน/เดือน/ปี</th><th class='excelth'>เวลา</th><th class='excelth'>ความชื้น</th></tr><tr><td colspan='3'>ไม่มีข้อมูล</td></tr></table>";
+		  }
+		}catch(err) {
+			document.getElementById("hum_pan").innerHTML = "<table id='hum_tb' class='exceltable'><tr><th class='excelth'>วัน/เดือน/ปี</th><th class='excelth'>เวลา</th><th class='excelth'>ความชื้น</th></tr><tr><td colspan='3'>ไม่มีข้อมูล</td></tr></table>";
+		}
+	  
+	}).done(function() {
+		console.log( "second success" );
+	}).fail(function() {
+		alert( "การเชื่อมต่อล้มเหลว ไม่สามารถแสดงข้อมูลได้" );
+	}).always(function() {
+		console.log( "finished" );
+	});
+}
+function GetDate4() { //function of gas out 
+    var Form4 = new Date(document.getElementById("Form4").value).getTime();
+    var To4 = new Date(document.getElementById("To4").value).getTime();
+	var getGas = $.get( urlFeedAPI+"&from="+Form4+"&to="+To4, function(resData) {
+	  //console.log(urlFeedAPI+"&from="+Form4+"&to="+To4);
+	  try{
+		  if(typeof(JSON.parse(resData).data[3])!="undefined") {
+			  var jsonDataGasOut = JSON.parse(resData).data[3].values;
+			  console.log(jsonDataGasOut);
+			  var tableExcel = "<table id='gas_out_tb' class='exceltable'><tr><th class='excelth'>วัน/เดือน/ปี</th><th class='excelth'>เวลา</th><th class='excelth'>ปริมาณก๊าซ(ออก)</th></tr>"
+			  for(var i=0; i<jsonDataGasOut.length;i++){
+				var dt = getFormattedDate(jsonDataGasOut[i][0]);
+				tableExcel+="<tr><td class='exceltd'>"+dt[0]+"</td><td class='exceltd'>"+dt[1]+"</td><td class='exceltd'>"+jsonDataGasOut[i][1]+"</td> </tr>";
+				//console.log(dt[0]+" , "+dt[1]+" , "+jsonDataGasOut[i][1]);
+			  }
+			  tableExcel+= "</table>";
+			  document.getElementById("gas_out_pan").innerHTML = tableExcel;
+		  }else{
+			document.getElementById("gas_out_pan").innerHTML = "<table id='gas_out_tb' class='exceltable'><tr><th class='excelth'>วัน/เดือน/ปี</th><th class='excelth'>เวลา</th><th class='excelth'>ปริมาณก๊าซ(ออก)</th></tr><tr><td colspan='3'>ไม่มีข้อมูล</td></tr></table>";
+		  }
+		}catch(err) {
+			document.getElementById("gas_out_pan").innerHTML = "<table id='gas_out_tb' class='exceltable'><tr><th class='excelth'>วัน/เดือน/ปี</th><th class='excelth'>เวลา</th><th class='excelth'>ปริมาณก๊าซ(ออก)</th></tr><tr><td colspan='3'>ไม่มีข้อมูล</td></tr></table>";
+		}
+	  
+	}).done(function() {
+		console.log( "second success" );
+	}).fail(function() {
+		alert( "การเชื่อมต่อล้มเหลว ไม่สามารถแสดงข้อมูลได้" );
+	}).always(function() {
+		console.log( "finished" );
+	});
+}
+
+</script>
+
+
+
+</head>
+<body bg-1>
+<center><h1><i>Sensor Monitor</i></h1></center>
+<br>
+<div id="data" align="right"><FONT COLOR=#DDDDDD>OFFLINE</FONT></div>
+<div class="row">
+    <div class="col-sm-6" id="chartContainer" style="height: 300px; width:50%;"></div>
+    <div class="col-sm-6" id="chartContainer1" style="height: 300px; width:50%;"></div>
+</div>
+<br>
+<div class="row">
+    <div class="col-sm-6" id="chartContainer2" style="height: 300px; width:50%;"></div>
+    <div class="col-sm-6" id="chartContainer3" style="height: 300px; width:50%;"></div>
+    
+</div>
+<br><br>
+
+<!-- <br><br>
+ -->
+<!--              <div class="col-sm-6" id="chartContainer3" style="height: 300px; width:50%;"></div> -->
+                    <div class="center">
+                    <table style="width: 100%">
+
+
+                    <tr>
+                    <th><font color="white" id="demo" >Form :</font></th>
+                    <th><input type="date" id="Form1" name="date" value="2016-01-01" min="2016-01-01" max="2100-01-01"></th><!-- input date form -->
+                    <th><button onclick="GetDate1()" class="btn btn-default">Generate</button></th> <!-- when click generate use function getDate -->
+
+                    <th><font color="white" id="demo2">Form :</font></th>
+                    <th><input type="date" id="Form2" name="date" value="2016-01-01" min="2016-01-01" max="2100-01-01"></th>
+                    <th><button onclick="GetDate2()" class="btn btn-default">Generate</button></th>
+
+                    <th><font color="white" id="demo4">Form :</font></th>
+                    <th><input type="date" id="Form3" name="date" value="2016-01-01" min="2016-01-01" max="2100-01-01"></th>
+                    <th><button onclick="GetDate3()" class="btn btn-default">Generate</button></th>
+
+                    <th><font color="white" id="demo6">Form :</font></th> <!-- add Form : gas_out input type date and button generate function GetDate4()-->
+                    <th><input type="date" id="Form4" name="date" value="2016-01-01" min="2016-01-01" max="2100-01-01"></th>
+                    <th><button onclick="GetDate4()" class="btn btn-default">Generate</button></th> 
+
+                    </tr>
+                    <tr>
+                    <th><font color="white" id="demo1">To :</font></th> <!-- use for display after click button generate -->
+                    <th><input type="date" id="To1" name="date" value="2016-01-01" min="2016-01-01" max="2100-01-01"></th> <!-- input date to -->
+                    <th><button onclick="btnExportP1()" id="btnExportP1" class="btn btn-default">Export to Excel</button></th>
+
+                    <th><font color="white" id="demo3">To :</font></th>
+                    <th><input type="date" id="To2" name="date" value="2016-01-01" min="2016-01-01" max="2100-01-01"></th>
+                    <th><button onclick="btnExportP2()" id="btnExportP2" class="btn btn-default">Export to Excel</button></th>
+
+                    <th><font color="white" id="demo5">To :</font></th>
+                    <th><input type="date" id="To3" name="date" value="2016-01-01" min="2016-01-01" max="2100-01-01"></th>
+                    <th><button onclick="btnExportP3()" id="btnExportP3" class="btn btn-default">Export to Excel</button></th>
+
+                    <th><font color="white" id="demo7">To :</font></th> <!-- add to : gas_out input type date -->
+                    <th><input type="date" id="To4" name="date" value="2016-01-01" min="2016-01-01" max="2100-01-01"></th>
+                    <th><button onclick="btnExportP4()" id="btnExportP4" class="btn btn-default">Export to Excel</button></th>
+
+                    </tr>
+                    </table>
+
+<!-- Panal  -->                   
+            <div class="row"> 
+    <div class="col-md-3"> <!-- divide 12 colums across the page to 3 Equal Columns -->
+        <div class="panel panel-primary"> <!-- class of panel -->
+            <div class="panel-heading"> 
+                <h3 class="panel-title">Gas in</h3> <!-- panel head and title you can change any text in here -->
+            </div>
+            <div class="panel-body scroll" id="gas_in_pan"> <!-- this is body of panel can write any text by using document.getElementById("gas_pan").innerHTML = Pan1;  -->
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="panel panel-primary">
+            <div class="panel-heading">
+                <h3 class="panel-title">Temp</h3>
+            </div>
+            <div class="panel-body scroll" id="temp_pan">
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="panel panel-primary">
+            <div class="panel-heading">
+                <h3 class="panel-title">Humid</h3>
+            </div>
+            <div class="panel-body scroll" id="hum_pan">
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3"> <!-- add panel gas out body id "gas_out_pan"-->
+        <div class="panel panel-primary">
+            <div class="panel-heading">
+                <h3 class="panel-title">Gas Out</h3>
+            </div>
+            <div class="panel-body scroll" id="gas_out_pan">
+            </div>
+        </div>
+    </div>
+</body>
+
+<script>
+	Date.prototype.yyyymmdd = function() {
+	  var mm = this.getMonth() + 1; // getMonth() is zero-based
+	  var dd = this.getDate();
+
+	  return [this.getFullYear(),
+			  (mm>9 ? '' : '0') + mm,
+			  (dd>9 ? '' : '0') + dd
+			 ].join('-');
+	};
+
+	var date = new Date();
+	
+	document.getElementById("Form1").value = date.yyyymmdd();
+	document.getElementById("Form2").value = date.yyyymmdd();
+	document.getElementById("Form3").value = date.yyyymmdd();
+	document.getElementById("To1").value = date.yyyymmdd();
+	document.getElementById("To2").value = date.yyyymmdd();
+	document.getElementById("To3").value = date.yyyymmdd();
+</script>
+</html>
