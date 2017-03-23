@@ -12,7 +12,6 @@
     <script src="https://code.highcharts.com/modules/exporting.js"></script>
     <script type="text/javascript" src="canvasjs.min.js"></script>
 	<script src="https://cdn.netpie.io/microgear.js"></script>
-	<script type="text/javascript" src="js/jquery.table2excel.js"></script>
     <style type="text/css">
         .bg-1 { 
     background-color: #002699; /* Blue */
@@ -227,7 +226,7 @@
                     margin: 10
                 },
                 data: [{
-                    type: "spline",
+                    type: "line",
                     xValueType: "dateTime",
                     dataPoints: dps_gas2
                 }],
@@ -239,10 +238,10 @@
 
                 for (var j = 0; j < 1; j++) {
                     time.setSeconds(time.getSeconds()+1);
-                    yVal = parseInt(yVal_stack);
-                    yVal1 = parseInt(yVal1_stack);
-                    yVal2 = parseInt(yVal2_stack);
-					yVal3 = parseInt(yVal3_stack);
+                    yVal = parseFloat(yVal_stack);
+                    yVal1 = parseFloat(yVal1_stack);
+                    yVal2 = parseFloat(yVal2_stack);
+					yVal3 = parseFloat(yVal3_stack);
 					
 					// ตัวเลือกเสริม
 					// ถ้าต้องการเช็คค่า ถ้าไม่มีค่าให้กำหนดค่าเป็น 0  
@@ -352,15 +351,26 @@ var feedid = "sensormon";
 var feedapikey = "SaPHXHxzKMYpmFFxxD9TI0x0EaisAYdQ";
 var granularity = "1minutes";
 var urlFeedAPI = "https://api.netpie.io/feed/"+feedid+"?apikey="+feedapikey+"&granularity="+granularity;
+var attrArray = ["gas","Temp","Humidity","gas2"];
+
+function validField(json,attr){
+	var rs = -1;
+	for(var i=0; i<json.data.length; i++){
+		if(json.data[i].attr==attr) rs=i;
+	}
+	return rs;
+}
+
 function GetDate1() { //function of gas in 
     var Form1 = new Date(document.getElementById("Form1").value).getTime();
     var To1 = new Date(document.getElementById("To1").value).getTime();
 	var getGas = $.get( urlFeedAPI+"&from="+Form1+"&to="+To1, function(resData) {
 	  //console.log(urlFeedAPI+"&from="+Form1+"&to="+To1);
 		try{
-		  if(typeof(JSON.parse(resData).data[0])!="undefined") {
-			  var jsonDataGasIn = JSON.parse(resData).data[0].values;
-			  console.log(jsonDataGasIn);
+		  if(typeof(JSON.parse(resData))!="undefined") {
+			  var findId = validField(JSON.parse(resData),attrArray[0]);
+			  var jsonDataGasIn = JSON.parse(resData).data[findId].values;
+			  //console.log(jsonDataGasIn);
 			  var tableExcel = "<table id='gas_in_tb' class='exceltable'><tr><th class='excelth'>วัน/เดือน/ปี</th><th class='excelth'>เวลา</th><th class='excelth'>ปริมาณก๊าซ(เข้า)</th></tr>"
 			  for(var i=0; i<jsonDataGasIn.length;i++){
 				var dt = getFormattedDate(jsonDataGasIn[i][0]);
@@ -390,9 +400,10 @@ function GetDate2() {//function of temperatur
 	var getGas = $.get( urlFeedAPI+"&from="+Form2+"&to="+To2, function(resData) {
 	  //console.log(urlFeedAPI+"&from="+Form2+"&to="+To2);
 		try{
-		  if(typeof(JSON.parse(resData).data[1])!="undefined") {
-			  var jsonDataTemp = JSON.parse(resData).data[1].values;
-			  console.log(jsonDataTemp);
+		  if(typeof(JSON.parse(resData))!="undefined") {
+			  var findId = validField(JSON.parse(resData),attrArray[1]);
+			  var jsonDataTemp = JSON.parse(resData).data[findId].values;
+			  //console.log(jsonDataTemp);
 			  var tableExcel = "<table id='temp_tb' class='exceltable'><tr><th class='excelth'>วัน/เดือน/ปี</th><th class='excelth'>เวลา</th><th class='excelth'>อุณหภูมิ</th></tr>"
 			  for(var i=0; i<jsonDataTemp.length;i++){
 				var dt = getFormattedDate(jsonDataTemp[i][0]);
@@ -422,9 +433,10 @@ function GetDate3() { //function of humid
 	var getGas = $.get( urlFeedAPI+"&from="+Form3+"&to="+To3, function(resData) {
 	  //console.log(urlFeedAPI+"&from="+Form3+"&to="+To3);
 		try{
-		  if(typeof(JSON.parse(resData).data[2])!="undefined") {
-			  var jsonDataHumid = JSON.parse(resData).data[2].values;
-			  console.log(jsonDataHumid);
+		  if(typeof(JSON.parse(resData))!="undefined") {
+			  var findId = validField(JSON.parse(resData),attrArray[2]);
+			  var jsonDataHumid = JSON.parse(resData).data[findId].values;
+			  //console.log(jsonDataHumid);
 			  var tableExcel = "<table id='hum_tb' class='exceltable'><tr><th class='excelth'>วัน/เดือน/ปี</th><th class='excelth'>เวลา</th><th class='excelth'>ความชื้น</th></tr>"
 			  for(var i=0; i<jsonDataHumid.length;i++){
 				var dt = getFormattedDate(jsonDataHumid[i][0]);
@@ -455,8 +467,9 @@ function GetDate4() { //function of gas out
 	  //console.log(urlFeedAPI+"&from="+Form4+"&to="+To4);
 	  try{
 		  if(typeof(JSON.parse(resData).data[3])!="undefined") {
-			  var jsonDataGasOut = JSON.parse(resData).data[3].values;
-			  console.log(jsonDataGasOut);
+			  var findId = validField(JSON.parse(resData),attrArray[3]);
+			  var jsonDataGasOut = JSON.parse(resData).data[findId].values;
+			  //console.log(jsonDataGasOut);
 			  var tableExcel = "<table id='gas_out_tb' class='exceltable'><tr><th class='excelth'>วัน/เดือน/ปี</th><th class='excelth'>เวลา</th><th class='excelth'>ปริมาณก๊าซ(ออก)</th></tr>"
 			  for(var i=0; i<jsonDataGasOut.length;i++){
 				var dt = getFormattedDate(jsonDataGasOut[i][0]);
@@ -604,12 +617,10 @@ function GetDate4() { //function of gas out
 	document.getElementById("Form1").value = date.yyyymmdd();
 	document.getElementById("Form2").value = date.yyyymmdd();
 	document.getElementById("Form3").value = date.yyyymmdd();
+	document.getElementById("Form4").value = date.yyyymmdd();
 	document.getElementById("To1").value = date.yyyymmdd();
 	document.getElementById("To2").value = date.yyyymmdd();
 	document.getElementById("To3").value = date.yyyymmdd();
+	document.getElementById("To4").value = date.yyyymmdd();
 </script>
-<<<<<<< HEAD
 </html>
-=======
-</html>
->>>>>>> origin/master
